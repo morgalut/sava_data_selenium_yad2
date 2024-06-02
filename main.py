@@ -11,6 +11,13 @@ def main():
 
     all_items = []
 
+    selectors = {
+        'listing': 'div.item-data-content_itemDataContentBox__gvAC2',
+        'title': 'h2[data-nagish="content-section-title"] span.item-data-content_heading__tphH4',
+        'price': 'span.price_price__xQt90',
+        'description': 'span.item-data-content_itemInfoLine__AeoPP'
+    }
+
     try:
         with initialize_driver() as driver:
             print("Driver initialized successfully.")
@@ -19,7 +26,7 @@ def main():
             page_source = driver.page_source
             
             while page_source:
-                items = parse_html(page_source)
+                items = parse_html(page_source, selectors)
                 all_items.extend(items)
                 
                 if not get_next_page(driver):  # Update get_next_page to return False if no next page

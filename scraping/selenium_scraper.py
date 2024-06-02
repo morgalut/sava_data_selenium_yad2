@@ -36,6 +36,7 @@ def initialize_driver(additional_options=None):
     driver = webdriver.Chrome(service=service, options=options)
     return driver
 
+
 def scroll_down(driver):
     """
     Scrolls down the page to load more content.

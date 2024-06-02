@@ -10,5 +10,3 @@ def write_to_csv(data, filename='output.csv'):
         writer.writeheader()
         for row in data:
             writer.writerow(row)
-
-# Rest of the code remains the same
