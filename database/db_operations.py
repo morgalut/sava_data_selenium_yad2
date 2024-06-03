@@ -1,3 +1,4 @@
+# database/db_operations.py
 import sqlite3
 
 def create_tables():
@@ -19,6 +20,6 @@ def save_data_to_db(data):
     c = conn.cursor()
     c.execute('''
         INSERT INTO apartments (title, price, description) VALUES (?, ?, ?)
-    ''', data)
+    ''', (data['title'], data['price'], data['description']))
     conn.commit()
     conn.close()

@@ -1,3 +1,4 @@
+# main.py
 from scraping.selenium_scraper import initialize_driver, get_next_page, scrape_yad2
 from scraping.bs4_parser import parse_html
 from database.db_operations import save_data_to_db, create_tables
