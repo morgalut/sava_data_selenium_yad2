@@ -1,20 +1,12 @@
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 def parse_html(html, selectors):
-    """
-    Parses the HTML content and extracts the relevant information.
-
-    Args:
-        html (str): The HTML content of the page.
-        selectors (dict): A dictionary containing the CSS selectors for the elements to be extracted.
-
-    Returns:
-        list: A list of dictionaries containing the title, price, and description of each listing.
-    """
     soup = BeautifulSoup(html, 'html.parser')
     listings = soup.select(selectors['listing'])
 
     extracted_data = []
+    current_date = datetime.now().strftime('%Y-%m-%d')
 
     for listing in listings:
         title_element = listing.select_one(selectors['title'])
@@ -29,7 +21,8 @@ def parse_html(html, selectors):
             extracted_data.append({
                 'title': title,
                 'price': price,
-                'description': description
+                'description': description,
+                'date': current_date
             })
 
     return extracted_data
