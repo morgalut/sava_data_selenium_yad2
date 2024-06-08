@@ -1,12 +1,17 @@
-# scraping/csv_writer.py
 import csv
-from enums import Paths
+import os
+from logging import DEBUG
 
-def write_to_csv(data, filename='output.csv'):
-    fieldnames = ['title', 'description', 'price', 'date']
-    with open(filename, mode='w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in data:
-            writer.writerow(row)
+def save_data_to_csv(data):
+    fieldnames = ['title', 'price', 'description', 'date', 'token']
+    file_path = 'C:/Users/Mor/Desktop/test/yad2_scraper/output.csv'
 
+    write_header = not os.path.exists(file_path)
+
+    with open(file_path, 'a', newline='', encoding='utf-8') as file:
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        if write_header:
+            writer.writeheader()
+        writer.writerows(data)
+        if DEBUG:
+            print("Data saved to CSV")

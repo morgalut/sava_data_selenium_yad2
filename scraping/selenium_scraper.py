@@ -75,15 +75,24 @@ def extract_data_from_page(driver):
         except:
             description = "N/A"
 
+        try:
+            link = item.find_element(By.XPATH, "..").get_attribute("href")
+            token = link.split("/item/")[1].split("?")[0]
+        except:
+            token = "N/A"
+
+        # Skip items without a token or a price
+        if token == "N/A" or price == "N/A":
+            continue
+
         date = time.strftime('%Y-%m-%d')
 
-        data_list.append({"title": title, "price": price, "description": description, "date": date})
+        data_list.append({"title": title, "price": price, "description": description, "date": date, "token": token})
     return data_list
-
 
 def save_data_to_csv(data):
     with open('C:/Users/Mor/Desktop/test/yad2_scraper/output.csv', 'a', newline='', encoding='utf-8') as file:  # Open file in append mode
-        writer = csv.DictWriter(file, fieldnames=['title', 'price', 'description', 'date'])
+        writer = csv.DictWriter(file, fieldnames=['title', 'price', 'description', 'date', 'token'])
         writer.writeheader()
         writer.writerows(data)
         if DEBUG:
@@ -94,7 +103,6 @@ def save_data_to_db(data):
         db_operations.save_data_to_db(item)
         if DEBUG:
             print("Data saved to DB: ", item)
-
 
 def handle_captcha(driver):
     """

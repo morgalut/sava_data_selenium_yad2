@@ -11,7 +11,8 @@ def create_tables():
             title TEXT,
             price TEXT,
             description TEXT,
-            date TEXT
+            date TEXT,
+            token TEXT  
         )
     ''')
 
@@ -37,11 +38,12 @@ def save_data_to_db(item):
     price = item['price']
     description = item['description']
     date = item.get('date', 'N/A')  # Assuming 'date' might not be present
+    token = item['token']
     
     # Check if the apartment already exists
     c.execute('''
-        SELECT id, price FROM apartments WHERE title = ? AND description = ?
-    ''', (title, description))
+        SELECT id, price FROM apartments WHERE title = ? AND description = ? AND token = ?
+    ''', (title, description, token))
     
     apartment_row = c.fetchone()
     
@@ -62,8 +64,8 @@ def save_data_to_db(item):
     else:
         # Insert new apartment record with current price
         c.execute('''
-            INSERT INTO apartments (title, price, description, date) VALUES (?, ?, ?, ?)
-        ''', (title, price, description, date))
+            INSERT INTO apartments (title, price, description, date, token) VALUES (?, ?, ?, ?, ?)
+        ''', (title, price, description, date, token))
         
         apartment_id = c.lastrowid
         
