@@ -1,7 +1,7 @@
 import random
 
-def random_delay():
-    return random.uniform(2, 5)
+def random_delay(min_delay=1, max_delay=5):
+    return random.uniform(min_delay, max_delay)
 
 def get_random_user_agent():
     user_agents = [
