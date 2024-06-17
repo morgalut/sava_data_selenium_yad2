@@ -1,29 +1,73 @@
-from bs4 import BeautifulSoup
 from datetime import datetime
+from bs4 import BeautifulSoup
+from enum import Enum
+import re
+
+class Selectors(Enum):
+    LISTING = 'div.upper-item-description_upperDescriptionBox__zG69c'
+    TITLE = 'h1.heading_heading__SB617'
+    PRICE = 'span.price_price__xQt90'
+    DESCRIPTION = 'h2.address_address__CNi30'
+    TOKEN = 'a[data-testid="link"]'
+    BUILDING_ITEM = 'div.building-item_itemValue__2jk14'
+    DESCRIPTION_TEXT = 'div.description_description__l3oun'
 
 class Parser:
     @staticmethod
-    def parse_html(html, selectors):
+    def parse_html(html: str, agent_names: list) -> dict:
         soup = BeautifulSoup(html, 'html.parser')
-        listings = soup.select(selectors['listing'])
-        extracted_data = []
+        listings = soup.select(Selectors.LISTING.value)
         current_date = datetime.now().strftime('%Y-%m-%d')
+        agent_results = {agent: {'found': False, 'details': []} for agent in agent_names}
+
         for listing in listings:
-            title_element = listing.select_one(selectors['title'])
-            price_element = listing.select_one(selectors['price'])
-            description_element = listing.select(selectors['description'])
-            link_element = listing.select_one('a[href]')
-            if title_element and price_element and description_element and link_element:
-                title = title_element.get_text(strip=True)
-                price = price_element.get_text(strip=True)
-                description = ' • '.join([desc.get_text(strip=True) for desc in description_element])
-                link = link_element['href']
-                token = link.split("/item/")[1].split("?")[0]
-                extracted_data.append({
+            title = Parser.extract_text(listing, Selectors.TITLE)
+            price = Parser.extract_text(listing, Selectors.PRICE)
+            description = Parser.extract_text(listing, Selectors.DESCRIPTION)
+            token = Parser.extract_token(listing)
+            building_item = Parser.extract_text(listing, Selectors.BUILDING_ITEM)
+            description_text = Parser.extract_text(listing, Selectors.DESCRIPTION_TEXT)
+
+            if title and price and description and token:
+                listing_data = {
                     'title': title,
                     'price': price,
                     'description': description,
                     'date': current_date,
-                    'token': token
-                })
-        return extracted_data
+                    'token': token,
+                    'building_item': building_item,
+                    'description_text': description_text
+                }
+                
+                for agent in agent_names:
+                    if re.search(agent, str(listing), re.IGNORECASE):
+                        agent_results[agent]['found'] = True
+                        agent_results[agent]['details'].append(listing_data)
+        
+        return agent_results
+
+    @staticmethod
+    def extract_text(listing, selector: Selectors) -> str:
+        element = listing.select_one(selector.value)
+        return element.get_text(strip=True) if element else None
+
+    @staticmethod
+    def extract_token(listing) -> str:
+        element = listing.select_one(Selectors.TOKEN.value)
+        if element and 'href' in element.attrs:
+            return element['href'].split("/item/")[1].split("?")[0]
+        return None
+
+if __name__ == "__main__":
+    html = '''HTML content here'''
+    agent_names = ['Agent Smith', 'Agent Johnson', 'Agent Brown']
+    parser = Parser()
+    data = parser.parse_html(html, agent_names)
+    for agent, details in data.items():
+        print(f"Agent: {agent}")
+        print(f"Found: {details['found']}")
+        if details['found']:
+            print("Details:")
+            for detail in details['details']:
+                print(detail)
+        print()
