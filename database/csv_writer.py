@@ -1,28 +1,22 @@
 import csv
 import os
-from datetime import datetime
 import logging
 
 class CSVWriter:
-    BASE_PATH = "C:\\Users\\Mor\\Desktop\\test\\yad2_scraper\\database"
+    CSV_DIR = "csv_data"
 
-    @staticmethod
-    def save_data_to_csv(data, filename):
-        fieldnames = ['title', 'price', 'description', 'date', 'token', 'hour', 'link']
-        file_path = os.path.join(CSVWriter.BASE_PATH, filename)
-        write_header = not os.path.exists(file_path)
-        
+    def __init__(self):
+        os.makedirs(self.CSV_DIR, exist_ok=True)
+
+    def save_data_to_csv(self, data, filename):
+        csv_file_path = os.path.join(self.CSV_DIR, filename)
         try:
-            with open(file_path, 'a', newline='', encoding='utf-8') as file:
-                writer = csv.DictWriter(file, fieldnames=fieldnames)
-                if write_header:
-                    writer.writeheader()
-                for item in data:
-                    if isinstance(item, dict):
-                        item['date'] = item.get('date', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-                    else:
-                        logging.warning(f"Expected dictionary, got {type(item)}: {item}")
-                writer.writerows(data)
-                logging.debug(f"Data saved to CSV: {file_path}")
+            with open(csv_file_path, mode='w', newline='', encoding='utf-8') as csv_file:
+                fieldnames = data[0].keys()
+                writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                writer.writeheader()
+                for row in data:
+                    writer.writerow(row)
         except Exception as e:
             logging.error(f"Error saving data to CSV: {e}")
+            raise

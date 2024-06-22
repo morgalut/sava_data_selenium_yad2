@@ -1,0 +1,8 @@
+{
+    "database_path": "database/apartment_data.db",
+    "csv_path": "csv_data/yad2_data.csv",
+    "urls": {
+      "yad2_item_url": "https://www.yad2.co.il/realestate/item/{token}"
+    }
+  }
+  

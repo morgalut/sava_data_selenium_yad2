@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 from enum import Enum
 import re
 
+import requests
+
 class Selectors(Enum):
     LISTING = 'div.upper-item-description_upperDescriptionBox__zG69c'
     TITLE = 'h1.heading_heading__SB617'
@@ -13,61 +15,51 @@ class Selectors(Enum):
     DESCRIPTION_TEXT = 'div.description_description__l3oun'
 
 class Parser:
-    @staticmethod
-    def parse_html(html: str, agent_names: list) -> dict:
-        soup = BeautifulSoup(html, 'html.parser')
-        listings = soup.select(Selectors.LISTING.value)
-        current_date = datetime.now().strftime('%Y-%m-%d')
-        agent_results = {agent: {'found': False, 'details': []} for agent in agent_names}
+    # Existing methods like parse_html, extract_text, and extract_token remain unchanged
 
-        for listing in listings:
-            title = Parser.extract_text(listing, Selectors.TITLE)
-            price = Parser.extract_text(listing, Selectors.PRICE)
-            description = Parser.extract_text(listing, Selectors.DESCRIPTION)
-            token = Parser.extract_token(listing)
-            building_item = Parser.extract_text(listing, Selectors.BUILDING_ITEM)
-            description_text = Parser.extract_text(listing, Selectors.DESCRIPTION_TEXT)
+    @staticmethod
+    def scrape_apartment_page(url: str) -> dict:
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            html = response.text
+            soup = BeautifulSoup(html, 'html.parser')
+
+            title = Parser.extract_text(soup, Selectors.TITLE)
+            price = Parser.extract_text(soup, Selectors.PRICE)
+            description = Parser.extract_text(soup, Selectors.DESCRIPTION)
+            token = Parser.extract_token(soup)
+            building_item = Parser.extract_text(soup, Selectors.BUILDING_ITEM)
+            description_text = Parser.extract_text(soup, Selectors.DESCRIPTION_TEXT)
+
+            current_date = datetime.now().strftime('%Y-%m-%d')
 
             if title and price and description and token:
-                listing_data = {
+                apartment_data = {
                     'title': title,
                     'price': price,
                     'description': description,
                     'date': current_date,
                     'token': token,
                     'building_item': building_item,
-                    'description_text': description_text
+                    'description_text': description_text,
+                    'url': url  # Include the URL for reference
                 }
-                
-                for agent in agent_names:
-                    if re.search(agent, str(listing), re.IGNORECASE):
-                        agent_results[agent]['found'] = True
-                        agent_results[agent]['details'].append(listing_data)
-        
-        return agent_results
 
-    @staticmethod
-    def extract_text(listing, selector: Selectors) -> str:
-        element = listing.select_one(selector.value)
-        return element.get_text(strip=True) if element else None
+                return apartment_data
+            else:
+                return None
 
-    @staticmethod
-    def extract_token(listing) -> str:
-        element = listing.select_one(Selectors.TOKEN.value)
-        if element and 'href' in element.attrs:
-            return element['href'].split("/item/")[1].split("?")[0]
-        return None
+        except requests.RequestException as e:
+            print(f"Error scraping {url}: {e}")
+            return None
 
 if __name__ == "__main__":
-    html = '''HTML content here'''
-    agent_names = ['Agent Smith', 'Agent Johnson', 'Agent Brown']
-    parser = Parser()
-    data = parser.parse_html(html, agent_names)
-    for agent, details in data.items():
-        print(f"Agent: {agent}")
-        print(f"Found: {details['found']}")
-        if details['found']:
-            print("Details:")
-            for detail in details['details']:
-                print(detail)
-        print()
+    # Example usage
+    apartment_url = 'https://www.yad2.co.il/realestate/item/1234567'
+    apartment_data = Parser.scrape_apartment_page(apartment_url)
+    if apartment_data:
+        print("Apartment Data:")
+        print(apartment_data)
+    else:
+        print("Failed to scrape apartment data.")
