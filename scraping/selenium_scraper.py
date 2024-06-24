@@ -12,6 +12,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
+from utils.decorators import log_execution_time
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from database.db_operations import Database
@@ -21,9 +23,10 @@ from enums import URLs
 from scraping.bs4_parser import Parser
 from scraping.bs5_more_seraher import WebpageAnalyzer
 
+
 class Scraper:
     DEBUG = True
-    TOTAL_PAGES = 1
+    TOTAL_PAGES = 2822
     YAD2_ITEM_URL = 'https://www.yad2.co.il/realestate/item/{token}'
     
     def __init__(self, debug=False):
@@ -31,9 +34,10 @@ class Scraper:
         self.db_path = 'C:\\Users\\Mor\\Desktop\\test\\yad2_scraper\\database\\yad2.db'
         self.db = Database()
         self.driver = None
-        
+        self.csv_writer = CSVWriter()  # Initialize the CSVWriter instance
+
     def initialize_driver(self, additional_options=None):
-        options = Options()
+        options = webdriver.ChromeOptions()
         options.headless = not self.DEBUG
         options.add_argument('--disable-gpu')
         options.add_argument('--no-sandbox')
@@ -48,6 +52,7 @@ class Scraper:
         options.add_experimental_option('useAutomationExtension', False)
         options.add_argument(f'user-agent={get_random_user_agent()}')
         options.add_argument("--disable-blink-features=AutomationControlled")
+        self.driver = webdriver.Chrome(options=options)
         
         if additional_options:
             for option in additional_options:
@@ -58,6 +63,12 @@ class Scraper:
         self.driver.execute_cdp_cmd('Network.setUserAgentOverride', {"userAgent": get_random_user_agent()})
         self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
+        
+    def close_driver(self):
+        if self.driver:
+            self.driver.quit()
+            self.driver = None
+                
     def extract_data_from_page_items(self):
         items = self.driver.find_elements(By.XPATH, "//*[@id='__next']/div/main/div[2]/div/div/div[4]/ul/li/div/div/a/div")
         data_list = []
@@ -189,7 +200,9 @@ class Scraper:
         captcha_url = self.driver.current_url
         print(f"Solve the CAPTCHA here: {captcha_url}")
         input("Press Enter after solving the CAPTCHA...")
-
+        
+        
+    @log_execution_time
     def scrape_token(self, token):
         try:
             self.initialize_driver()
@@ -224,9 +237,11 @@ class Scraper:
             if self.DEBUG:
                 print(f"Scraping of token {token} completed")
 
+    @log_execution_time
     def scrape_page(self, page_number):
         try:
-            self.initialize_driver()
+            if self.driver is None:
+                self.initialize_driver()
             url = f"https://www.yad2.co.il/realestate/forsale?bBox=30.528827%2C32.047508%2C34.087585%2C34.920591&status=0&owner=0&page={page_number}"
             self.driver.get(url)
             WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
@@ -238,7 +253,7 @@ class Scraper:
             data_list = self.extract_data_from_page_items()
 
             csv_filename = f'yad2_page_{page_number}.csv'
-            self.save_data_to_csv(data_list, csv_filename)
+            self.csv_writer.save_data_to_csv(data_list, csv_filename)  # Use CSVWriter to save data
 
             if data_list:
                 self.save_data_to_db(data_list)
@@ -249,8 +264,6 @@ class Scraper:
             logging.error(f"Error scraping page {page_number}: {e}")
 
         finally:
-            if self.driver:
-                self.driver.quit()
             if self.DEBUG:
                 print(f"Scraping of page {page_number} completed")
 

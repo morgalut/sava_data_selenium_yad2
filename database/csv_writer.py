@@ -3,7 +3,8 @@ import os
 import logging
 
 class CSVWriter:
-    CSV_DIR = "csv_data"
+    CSV_DIR = "C:/Users/Mor/Desktop/test/yad2_scraper/csv_data"
+
 
     def __init__(self):
         os.makedirs(self.CSV_DIR, exist_ok=True)
